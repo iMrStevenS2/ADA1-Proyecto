@@ -1,7 +1,39 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+from tkcalendar import Calendar
+from datetime import date
+
+## Importar funciones
+from funciones.tarea import Tarea
+from funciones.heap import MaxHeap
+from funciones.arbol_avl import ArbolAVL
+from funciones.archivo import cargar_tareas, guardar_tareas
+import os
+
+## Crear directorios si no existen
+def crear_directorios():
+    if not os.path.exists("../data"):
+        os.makedirs("../data")
+        
+## Lanzar la aplicación y
+## Cargar tareas desde archivos
 
 def lanzar_app():
+    crear_directorios()
+    ruta_heap = "../data/heap_data.json"
+    ruta_avl = "../data/avl_data.json"
+    
+    heap = MaxHeap()
+    avl = ArbolAVL()
+    tareas_heap = cargar_tareas(ruta_heap)
+    tareas_avl = cargar_tareas(ruta_avl)
+
+    for tarea in tareas_heap:
+        heap.insertar(tarea)
+        
+    for tarea in tareas_avl:
+        avl.insertar(tarea)
+
     def agregar_tarea():
         id_tarea = entry_id.get()
         descripcion = entry_desc.get()
@@ -11,6 +43,20 @@ def lanzar_app():
         if not id_tarea or not descripcion or not prioridad or not fecha:
             messagebox.showwarning("Campos incompletos", "Por favor, llena todos los campos.")
             return
+
+        if avl.buscar(id_tarea):
+            messagebox.showerror("ID duplicado", "Ya existe una tarea con ese ID.")
+            return
+
+        tarea = Tarea(id_tarea, descripcion, prioridad, fecha)
+
+        heap.insertar(tarea)
+        avl.insertar(tarea)
+
+        print("ruta_heap:", ruta_heap, type(ruta_heap))
+
+        guardar_tareas(heap.obtener_datos(), ruta_heap)
+        guardar_tareas(avl.obtener_tareas(), ruta_avl)
 
         lista_tareas.insert("", "end", values=(id_tarea, descripcion, prioridad, fecha))
         limpiar_campos()
@@ -22,19 +68,31 @@ def lanzar_app():
         entry_fecha.delete(0, tk.END)
 
     def obtener_tarea_mas_prioritaria():
-        prioridades = {"alta": 1, "media": 2, "baja": 3}
-        tareas = lista_tareas.get_children()
-        if not tareas:
+        if not heap.heap:
             messagebox.showinfo("Sin tareas", "No hay tareas registradas.")
             return
 
-        tarea_prioritaria = min(
-            tareas,
-            key=lambda t: prioridades.get(lista_tareas.item(t)["values"][2], 4)
-        )
-        valores = lista_tareas.item(tarea_prioritaria)["values"]
-        mensaje = f"Tarea más prioritaria:\n\nID: {valores[0]}\nDesc: {valores[1]}\nPrioridad: {valores[2]}\nFecha: {valores[3]}"
+        tarea = heap.heap[0]
+        mensaje = f"Tarea más prioritaria:\n\nID: {tarea.id}\nDesc: {tarea.descripcion}\nPrioridad: {tarea.prioridad}\nFecha: {tarea.fecha}"
         messagebox.showinfo("Más prioritaria", mensaje)
+        
+
+    def eliminar_tarea():
+        seleccion = lista_tareas.selection()
+        if not seleccion:
+            messagebox.showwarning("Selecciona una tarea", "Debes seleccionar una tarea para eliminar.")
+            return
+
+        item = lista_tareas.item(seleccion[0])
+        id_tarea = item["values"][0]
+
+        heap.eliminar_por_id(id_tarea)
+        avl.eliminar(id_tarea)
+
+        guardar_tareas(heap.obtener_datos(), ruta_heap)
+        guardar_tareas(avl.obtener_tareas(), ruta_avl)
+
+        lista_tareas.delete(seleccion[0])
 
     # Ventana principal
     ventana = tk.Tk()
@@ -58,16 +116,48 @@ def lanzar_app():
     combo_prioridad = ttk.Combobox(frame_form, values=["alta", "media", "baja"], state="readonly")
     combo_prioridad.grid(row=2, column=1, padx=5)
 
-    tk.Label(frame_form, text="Fecha de Vencimiento:").grid(row=3, column=0, sticky="e")
-    entry_fecha = tk.Entry(frame_form)
-    entry_fecha.grid(row=3, column=1, padx=5)
+    ### Calendario
+    entry_fecha_var = tk.StringVar()
 
+    def abrir_calendario():
+        top = tk.Toplevel(ventana)
+        top.grab_set()  # Modal
+
+        cal = Calendar(top, selectmode="day",
+                    year=date.today().year,
+                    month=date.today().month,
+                    day=date.today().day,
+                    mindate=date(2020, 1, 1),
+                    maxdate=date(2100, 12, 31),
+                    date_pattern='yyyy-mm-dd')
+        cal.pack(padx=10, pady=10)
+
+        def seleccionar_fecha():
+            entry_fecha_var.set(cal.get_date())
+            top.destroy()
+
+        tk.Button(top, text="Seleccionar", command=seleccionar_fecha).pack(pady=5)
+
+    # Etiqueta y campo de texto con botón para abrir calendario
+    tk.Label(frame_form, text="Fecha de Vencimiento:").grid(row=3, column=0, sticky="e")
+
+    frame_fecha = tk.Frame(frame_form)
+    frame_fecha.grid(row=3, column=1, padx=5)
+
+    entry_fecha = tk.Entry(frame_fecha, textvariable=entry_fecha_var, width=16, state="readonly")
+    entry_fecha.pack(side="left")
+
+    btn_calendario = tk.Button(frame_fecha, text="📅", command=abrir_calendario)
+    btn_calendario.pack(side="left", padx=2)
+
+    ###
     # Botones
     frame_botones = tk.Frame(ventana)
     frame_botones.pack(pady=5)
 
     tk.Button(frame_botones, text="Agregar Tarea", command=agregar_tarea).pack(side="left", padx=10)
     tk.Button(frame_botones, text="Ver Más Prioritaria", command=obtener_tarea_mas_prioritaria).pack(side="left", padx=10)
+    tk.Button(frame_botones, text="Eliminar Tarea", command=eliminar_tarea).pack(side="left", padx=10)
 
     # Tabla de tareas
     frame_lista = tk.Frame(ventana)
@@ -81,5 +171,8 @@ def lanzar_app():
         lista_tareas.column(col, width=130)
 
     lista_tareas.pack()
+    
+    for tarea in heap.heap:
+        lista_tareas.insert("", "end", values=(tarea.id, tarea.descripcion, tarea.prioridad, tarea.fecha))
 
     ventana.mainloop()
