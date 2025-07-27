@@ -140,3 +140,19 @@ class ArbolAVL:
 
         inorden(self.raiz)
         return resultado
+
+    def es_balanceado(self):
+        def _verificar(nodo):
+            if not nodo:
+                return True, 0
+            izq_ok, alt_izq = _verificar(nodo.izq)
+            der_ok, alt_der = _verificar(nodo.der)
+
+            balance = alt_izq - alt_der
+            actual_ok = abs(balance) <= 1
+            altura = 1 + max(alt_izq, alt_der)
+
+            return izq_ok and der_ok and actual_ok, altura
+
+        balanceado, _ = _verificar(self.raiz)
+        return balanceado
