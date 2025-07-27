@@ -58,6 +58,8 @@ def lanzar_app():
         guardar_tareas(heap.obtener_datos(), ruta_heap)
         guardar_tareas(avl.obtener_tareas(), ruta_avl)
 
+        print("¿AVL balanceado?", avl.es_balanceado())
+
         lista_tareas.insert("", "end", values=(id_tarea, descripcion, prioridad, fecha))
         limpiar_campos()
 
@@ -92,6 +94,7 @@ def lanzar_app():
         guardar_tareas(heap.obtener_datos(), ruta_heap)
         guardar_tareas(avl.obtener_tareas(), ruta_avl)
 
+        print("¿AVL balanceado?", avl.es_balanceado())
         lista_tareas.delete(seleccion[0])
 
     # Ventana principal
@@ -157,7 +160,7 @@ def lanzar_app():
 
     tk.Button(frame_botones, text="Agregar Tarea", command=agregar_tarea).pack(side="left", padx=10)
     tk.Button(frame_botones, text="Ver Más Prioritaria", command=obtener_tarea_mas_prioritaria).pack(side="left", padx=10)
-    tk.Button(frame_botones, text="Eliminar Tarea", command=eliminar_tarea).pack(side="left", padx=10)
+    tk.Button(frame_botones, text="Completar Tarea", command=eliminar_tarea).pack(side="left", padx=10)
 
     # Tabla de tareas
     frame_lista = tk.Frame(ventana)
