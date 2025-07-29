@@ -10,6 +10,12 @@ from funciones.arbol_avl import ArbolAVL
 from funciones.archivo import cargar_tareas, guardar_tareas
 import os
 
+def mostrar_heap(heap_list):
+    print("\n📦 Estado del MaxHeap:")
+    for i, tarea in enumerate(heap_list):
+        print(f"[{i}] ID: {tarea.id}, Prioridad: {tarea.prioridad}, Desc: {tarea.descripcion}, Fecha: {tarea.fecha}")
+
+
 ## Crear directorios si no existen
 def crear_directorios():
     if not os.path.exists("../data"):
@@ -51,6 +57,7 @@ def lanzar_app():
         tarea = Tarea(id_tarea, descripcion, prioridad, fecha)
 
         heap.insertar(tarea)
+        mostrar_heap(heap.heap)
         avl.insertar(tarea)
 
         print("ruta_heap:", ruta_heap, type(ruta_heap))
@@ -158,9 +165,31 @@ def lanzar_app():
     frame_botones = tk.Frame(ventana)
     frame_botones.pack(pady=5)
 
+    frame_busqueda = tk.Frame(ventana)
+    frame_busqueda.pack(pady=5)
+
+
     tk.Button(frame_botones, text="Agregar Tarea", command=agregar_tarea).pack(side="left", padx=10)
     tk.Button(frame_botones, text="Ver Más Prioritaria", command=obtener_tarea_mas_prioritaria).pack(side="left", padx=10)
     tk.Button(frame_botones, text="Completar Tarea", command=eliminar_tarea).pack(side="left", padx=10)
+    
+    tk.Label(frame_busqueda, text="Buscar ID:").pack(side="left")
+    entry_buscar = tk.Entry(frame_busqueda, width=15)
+    entry_buscar.pack(side="left", padx=5)
+
+    def buscar_tarea():
+        id_buscado = entry_buscar.get().strip()
+        if not id_buscado:
+            messagebox.showwarning("Campo vacío", "Ingresa un ID para buscar.")
+            return
+        tarea = avl.buscar(id_buscado)
+        if tarea:
+            mensaje = f"Tarea encontrada:\n\nID: {tarea.id}\nDesc: {tarea.descripcion}\nPrioridad: {tarea.prioridad}\nFecha: {tarea.fecha}"
+            messagebox.showinfo("Resultado", mensaje)
+        else:
+            messagebox.showinfo("No encontrada", f"No se encontró ninguna tarea con ID {id_buscado}.")
+
+    tk.Button(frame_busqueda, text="Buscar", command=buscar_tarea).pack(side="left", padx=5)
 
     # Tabla de tareas
     frame_lista = tk.Frame(ventana)
