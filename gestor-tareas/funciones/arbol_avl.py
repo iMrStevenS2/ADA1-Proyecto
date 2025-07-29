@@ -72,6 +72,8 @@ class ArbolAVL:
 
     # Buscar tarea por ID
     def buscar(self, id):
+        id = str(id)  # Asegurarse de que el ID sea cadena
+
         def _buscar(nodo, id):
             if not nodo:
                 return None
@@ -81,6 +83,7 @@ class ArbolAVL:
                 return _buscar(nodo.izq, id)
             else:
                 return _buscar(nodo.der, id)
+
         return _buscar(self.raiz, id)
 
     # Obtener nodo con valor mínimo
